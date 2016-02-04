@@ -16,6 +16,14 @@ module Lita
         self.github_client = Octokit::Client.new(access_token: github_token, auto_paginate: true)
       end
 
+      def organizations
+        github_client.organizations
+      end
+
+      def auth
+        #github_client.
+      end
+
       def list
         get_pull_requests
         build_summary
@@ -23,19 +31,15 @@ module Lita
 
     private
       def get_pull_requests
-        # Grab the issues and sort out the pull request issues by repos name
-        issues = github_client.org_issues(github_organization, filter: 'all')
-        issues.sort! { |a,b| a.repository.name.downcase <=> b.repository.name.downcase }
-
-        issues.each do |i|
-          github_pull_requests << i if i.pull_request
+        github_client.pull_requests('chiron-health/chiron-web', :state => 'open').each do |pull|
+          github_pull_requests << pull
         end
       end
 
       def build_summary
         github_pull_requests.map do |pr_issue|
-          status = repo_status("#{pr_issue.repository.full_name}", pr_issue)
-          "#{pr_issue.repository.name} #{status} #{pr_issue.title} #{pr_issue.pull_request.html_url}"
+          labels = github_client.issue("#{pr_issue.head.repo.owner.login}/#{pr_issue.head.repo.name}", pr_issue.number).labels
+          "#{pr_issue.title}\n#{pr_issue.html_url} - Labels: #{labels.map{|e| e.name}}"
         end
       end
 

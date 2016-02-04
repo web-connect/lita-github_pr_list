@@ -39,14 +39,16 @@ module Lita
       http.post "/pull_request_open_message_hook", :pull_request_open_message_hook
 
       def list_org_pr(response)
-        pull_requests = Lita::GithubPrList::PullRequest.new({ github_organization: github_organization,
+        client = Lita::GithubPrList::PullRequest.new({ github_organization: github_organization,
                                                               github_token: github_access_token,
-                                                              response: response }).list
+                                                              response: response })
+        #response.reply "Found these orgs: #{client.organizations.inspect}"
+        pull_requests = client.list
         merge_requests = redis.keys("gitlab_mr*").map { |key| redis.get(key) }
 
         requests = pull_requests + merge_requests
-        message = "I found #{requests.count} open pull requests for #{github_organization}\n"
-        response.reply(message + requests.join("\n"))
+        message = "I found #{requests.count} open pull requests\n"
+        response.reply(message + requests.join("\n\n"))
       end
 
       def alias_user(response)
